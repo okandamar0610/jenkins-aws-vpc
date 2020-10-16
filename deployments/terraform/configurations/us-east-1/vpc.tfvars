@@ -1,7 +1,7 @@
 #Provide a region for VPC
 environment                     =   "virginia"
 region                          =   "us-east-1"
-s3_bucket                       =	"fuchicorp"
+s3_bucket                       =	"terrafor-state-april-class-okan"
 s3_folder_region                =	"us-east-1"
 s3_folder_project               =   "fuchicorp"
 s3_folder_type                  =   "teamLV"
