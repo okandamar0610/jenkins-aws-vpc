@@ -60,9 +60,9 @@ def slavePodTemplate = """
       node(k8slabel) {
           
         stage("Pull SCM") {
-            git 'https://github.com/okandamar0610/jenkins-aws-vpc.git'
+          checkout scm
         }
-  
+
         stage("Generate Variables") {
           dir('deployments/terraform') {
 
@@ -75,19 +75,21 @@ def slavePodTemplate = """
 
           }   
         }
+
         container("buildtools") {
             dir('deployments/terraform') {
-                withCredentials([usernamePassword(credentialsId: "aws-access-cred", 
+                withCredentials([usernamePassword(credentialsId: "aws-access-${environment}", 
                     passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                    println("Selected cred is: aws-access-${environment}")
                     stage("Terraform Apply/plan") {
                         if (!params.terraformDestroy) {
                             if (params.terraformApply) {
                                 println("Applying the changes")
                                 sh """
                                 #!/bin/bash
-                                export AWS_DEFAULT_REGION=${region}
-                                source setenv.sh configurations/us-east-1/vpc.tfvars
-                                terraform apply -auto-approve -var-file configurations/us-east-1/vpc.tfvars
+                                export AWS_DEFAULT_REGION=${aws_region}
+                                source ./setenv.sh dev.tfvars
+                                terraform apply -auto-approve -var-file \$DATAFILE
                                 """
                             } else {
                                 println("Planing the changes")
@@ -95,9 +97,9 @@ def slavePodTemplate = """
                                 #!/bin/bash
                                 set +ex
                                 ls -l
-                                export AWS_DEFAULT_REGION=${region}
-                                source setenv.sh configurations/us-east-1/vpc.tfvars
-                                terraform apply -auto-approve -var-file configurations/us-east-1/vpc.tfvars
+                                export AWS_DEFAULT_REGION=${aws_region}
+                                source ./setenv.sh dev.tfvars
+                                terraform plan -var-file \$DATAFILE
                                 """
                             }
                         }
@@ -108,9 +110,9 @@ def slavePodTemplate = """
                             println("Destroying the all")
                             sh """
                             #!/bin/bash
-                            export AWS_DEFAULT_REGION=${region}
-                            source setenv.sh configurations/us-east-1/vpc.tfvars
-                            terraform destroy -auto-approve -var-file configurations/us-east-1/vpc.tfvars
+                            export AWS_DEFAULT_REGION=${aws_region}
+                            source ./setenv.sh dev.tfvars
+                            terraform destroy -auto-approve -var-file \$DATAFILE
                             """
                         } else {
                             println("Skiping the destroy")
